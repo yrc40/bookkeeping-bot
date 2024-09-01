@@ -1,4 +1,5 @@
 import telebot
+from db import session, User, Transaction
 import pandas as pd
 
 bot = telebot.TeleBot("7204964331:AAGcJe-_-EMhYEtEIQYxkwIfkI509vC5s68")
@@ -8,40 +9,26 @@ names = []
 
 @bot.message_handler(commands=['start'])
 def send_welcome(message):
-    bot.reply_to(message, "Hello, this is bookkeeping bot!\nPlease enter the number of user:")
-    bot.register_next_step_handler(message, get_num_of_people)
+    bot.reply_to(message, "Hello, this is bookkeeping bot!\nAll of users should send /register so that I can remember you")
+    bot.reply_to(message, "Use /info to see how to use.")
 
-def get_num_of_people(message):
-    global n
-    if message.text.isdigit():
-        n = int(message.text)
-        bot.reply_to(message,
-                     f"OK, {n} people.\nPlease enter users' names in a line and sep each with comma and one space.")
-        bot.register_next_step_handler(message, set_user_name)
+@bot.message_handler(commands=['register'])
+def register_user(message):
+    user_id = message.from_user.id
+    username = message.from_user.username
+    existing_user = session.query(User).filter_by(id=user_id).first()
+
+    if existing_user is None:
+        user_data = User(id=user_id, name=username)
+        session.add(user_data) 
+        session.commit()
+        bot.reply_to(message, f"Hi, @{username}. You are registered successfully.")
     else:
-        bot.reply_to(message, "Invalid input.\nPlease enter number of user again.")
-        bot.register_next_step_handler(message, get_num_of_people)
+        bot.reply_to(message,f"User already exists: ID = {user_id}, Username = {username}")
 
-def set_user_name(message):
-    global names
-    names = message.text.split(", ")
-    if len(names) != n:
-        bot.reply_to(message, f"You should enter {n} names.\nPlease enter user names again.")
-        bot.register_next_step_handler(message, set_user_name)
-    else:
-        bot.reply_to(message, f"Hi, {message.text}.\nAre the user names correct?[Y/n]")
-        bot.register_next_step_handler(message, create_user_table)
-
-def create_user_table(message):
-    global names
-    if message.text == 'Y':
-        table = pd.DataFrame(0.0, index = names, columns = names)
-
-        table.to_csv("user_table.csv", index = True)
-        bot.reply_to(message, "create user data successfully!")
-    else:
-        bot.reply_to(message, "Reset user name. Please enter user names again.")
-        bot.register_next_step_handler(message, set_user_name)
+@bot.message_handler(commands=['info'])
+def get_info(message):
+    bot.reply_to(message,"/register: register as a bookkeeping bot user\n/add: add a transaction\n/bal: make a query of the balance of two people")
 
 @bot.message_handler(commands=['add'])
 def enter_transaction(message):
