@@ -1,11 +1,7 @@
-import telebot
+from bot import bot
 from db import session, User, Transaction
+from utils import transaction_process
 import pandas as pd
-
-bot = telebot.TeleBot("7204964331:AAGcJe-_-EMhYEtEIQYxkwIfkI509vC5s68")
-
-n = 0
-names = []
 
 @bot.message_handler(commands=['start'])
 def send_welcome(message):
@@ -19,7 +15,7 @@ def register_user(message):
     existing_user = session.query(User).filter_by(id=user_id).first()
 
     if existing_user is None:
-        user_data = User(id=user_id, name=username)
+        user_data = User(id = user_id, name = username)
         session.add(user_data) 
         session.commit()
         bot.reply_to(message, f"Hi, @{username}. You are registered successfully.")
@@ -32,26 +28,8 @@ def get_info(message):
 
 @bot.message_handler(commands=['add'])
 def enter_transaction(message):
-    bot.reply_to(message, "Enter a transaction in this format: [sender] [receiver] [amount]")
+    bot.reply_to(message, "Enter a transaction in this format: @sender @receiver [amount]")
     bot.register_next_step_handler(message, transaction_process)
-
-def transaction_process(message):
-    trans = message.text.split()
-    sender = trans[0]
-    receiver = trans[1]
-    amount = float(trans[2])
-    if not amount > 0:
-        bot.reply_to(message, "Invalid transaction amount, please enter the transcation again")
-        bot.register_next_step_handler(message, enter_transaction)
-    else:
-        table = pd.read_csv("user_table.csv", index_col = 0)
-        if sender in table.index and receiver in table.columns:
-            table.at[sender, receiver] += amount
-            table.to_csv("user_table.csv", index = True)
-            bot.reply_to(message, f"Transaction of {amount} from {sender} to {receiver} recorded.")
-        else:
-            bot.reply_to(message, "Invalid sender or receiver. Please enter the transaction again.")
-            bot.register_next_step_handler(message, enter_transaction)
 
 @bot.message_handler(commands=['bal'])
 def bal_query(message):
