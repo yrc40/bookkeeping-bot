@@ -35,16 +35,4 @@ def trans_record(message):
 def delete_rec(message):
     mark_as_done(message)
 
-def print_table_contents(session):
-    # 查詢所有用戶
-    trans = session.query(Transaction).all()
-
-    # 列印每條記錄
-    for user in trans:
-        print(f"ID: {user.transaction_id}, Name: {user.sender_id}, {user.amount}, {user.date}, {user.status}")
-
-# 執行函數
-print_table_contents(session)
-
-
 bot.infinity_polling()
