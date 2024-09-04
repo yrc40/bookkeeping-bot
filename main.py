@@ -1,28 +1,18 @@
 from bot import bot
 from db import session, User, Transaction
-from utils import transaction_process
+from utils import transaction_process, show_bal, transaction_record, register_user, mark_as_done
 import pandas as pd
 
 @bot.message_handler(commands=['start'])
 def send_welcome(message):
     bot.reply_to(message, "Hello, this is bookkeeping bot!\nAll of users should send /register so that I can remember you")
-    bot.reply_to(message, "Use /info to see how to use.")
+    bot.reply_to(message, "Use /help to see how to use.")
 
 @bot.message_handler(commands=['register'])
-def register_user(message):
-    user_id = message.from_user.id
-    username = message.from_user.username
-    existing_user = session.query(User).filter_by(id=user_id).first()
+def register(message):
+    register_user(message)
 
-    if existing_user is None:
-        user_data = User(id = user_id, name = username)
-        session.add(user_data) 
-        session.commit()
-        bot.reply_to(message, f"Hi, @{username}. You are registered successfully.")
-    else:
-        bot.reply_to(message,f"User already exists: ID = {user_id}, Username = {username}")
-
-@bot.message_handler(commands=['info'])
+@bot.message_handler(commands=['help'])
 def get_info(message):
     bot.reply_to(message,"/register: register as a bookkeeping bot user\n/add: add a transaction\n/bal: make a query of the balance of two people")
 
@@ -33,29 +23,28 @@ def enter_transaction(message):
 
 @bot.message_handler(commands=['bal'])
 def bal_query(message):
-    bot.reply_to(message, "Enter a pair of user to look up balance: [user1] [user 2]")
+    bot.reply_to(message, "Enter a pair of user to look up balance: @user1 @user2")
     bot.register_next_step_handler(message, show_bal)
 
-def show_bal(message):
-    user = message.text.split()
-    user1 = user[0]
-    user2 = user[1]
-    table = pd.read_csv("user_table.csv", index_col = 0)
-    if not user1 == user2 and user1 in table.index and user2 in table.index:
-        m12 = table.at[user1, user2]
-        m21 = table.at[user2, user1]
-        if(m12 >= m21):
-            bot.reply_to(message, f"*--- Balance of {user1} and {user2} ---*\n{user2} should give {user1} {m12-m21}")
-        else:
-            bot.reply_to(message, f"*--- Balance of {user1} and {user2} ---*\n{user1} should give {user2} {m21-m12}")
-    else:
-        bot.reply_to(message, "Invalid query. Please enter users again")
-        bot.register_next_step_handler(message, bal_query)
+@bot.message_handler(commands=['rec'])
+def trans_record(message):
+    bot.reply_to(message, "Enter a pair of user to look up transaction in past n days: @user1 @user2 n")
+    bot.register_next_step_handler(message, transaction_record)
 
+@bot.message_handler(commands=['delete'])
+def delete_rec(message):
+    mark_as_done(message)
 
+def print_table_contents(session):
+    # 查詢所有用戶
+    trans = session.query(Transaction).all()
 
+    # 列印每條記錄
+    for user in trans:
+        print(f"ID: {user.transaction_id}, Name: {user.sender_id}, {user.amount}, {user.date}, {user.status}")
 
-
+# 執行函數
+print_table_contents(session)
 
 
 bot.infinity_polling()

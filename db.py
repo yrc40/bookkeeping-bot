@@ -24,6 +24,7 @@ class Transaction(Base):
     receiver_id = Column(Integer, ForeignKey('users.id'))
     amount = Column(Float)
     memo = Column(String(20))
+    status = Column(String(20))
 
     sender = relationship("User", foreign_keys=[sender_id], back_populates="sent_transactions")
     receiver = relationship("User", foreign_keys=[receiver_id], back_populates="received_transactions")
