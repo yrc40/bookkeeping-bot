@@ -1,7 +1,8 @@
-from bot import bot
-from db import session, User, Transaction
+import telebot
 from utils import transaction_process, show_bal, transaction_record, register_user, mark_as_done
 import pandas as pd
+
+bot = telebot.TeleBot("7204964331:AAGcJe-_-EMhYEtEIQYxkwIfkI509vC5s68")
 
 @bot.message_handler(commands=['start'])
 def send_welcome(message):
@@ -14,7 +15,12 @@ def register(message):
 
 @bot.message_handler(commands=['help'])
 def get_info(message):
-    bot.reply_to(message,"/register: register as a bookkeeping bot user\n/add: add a transaction\n/bal: make a query of the balance of two people")
+    text = "/register: Register as a bookkeeping bot user\n\n"
+    text = text + "/add: Add a transaction in the format /add @user1 @user2 [Amount] [Memo(optional)]\n\n"
+    text = text + "/bal: Check a pair of users' balance in the format /bal @user1 @user2\n\n"
+    text = text + "/rec: Check the past n days transaction record in the format /rec @user1 @user2 [n]\n\n"
+    text = text + "/delete: Delete a pair of users' transaction record in the format /delete @user1 @user2"
+    bot.reply_to(message, text)
 
 @bot.message_handler(commands=['add'])
 def enter_transaction(message):
