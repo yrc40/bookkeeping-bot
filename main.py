@@ -10,7 +10,7 @@ def send_welcome(message):
 
 @bot.message_handler(commands=['register'])
 def register(message):
-    register_user(message)
+    bot.reply_to(message, register_user(message))
 
 @bot.message_handler(commands=['help'])
 def get_info(message):
@@ -18,21 +18,18 @@ def get_info(message):
 
 @bot.message_handler(commands=['add'])
 def enter_transaction(message):
-    bot.reply_to(message, "Enter a transaction in this format: @sender @receiver [amount]")
-    bot.register_next_step_handler(message, transaction_process)
+    bot.reply_to(message, transaction_process(message))
 
 @bot.message_handler(commands=['bal'])
 def bal_query(message):
-    bot.reply_to(message, "Enter a pair of user to look up balance: @user1 @user2")
-    bot.register_next_step_handler(message, show_bal)
+    bot.reply_to(message, show_bal(message))
 
 @bot.message_handler(commands=['rec'])
 def trans_record(message):
-    bot.reply_to(message, "Enter a pair of user to look up transaction in past n days: @user1 @user2 n")
-    bot.register_next_step_handler(message, transaction_record)
+    bot.reply_to(message, transaction_record(message))
 
 @bot.message_handler(commands=['delete'])
 def delete_rec(message):
-    mark_as_done(message)
+    bot.reply_to(message, mark_as_done(message))
 
 bot.infinity_polling()
