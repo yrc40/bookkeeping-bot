@@ -2,36 +2,45 @@ from db import session, User, Transaction
 from datetime import datetime, timedelta
 from sqlalchemy import func, and_, or_, update
 
+
 def register_user(message):
     user_id = message.from_user.id
     username = message.from_user.username
     existing_user = session.query(User).filter_by(id=user_id).first()
-    
+
     if existing_user is None:
-        user_data = User(id = user_id, name = username)
-        session.add(user_data) 
+        user_data = User(id=user_id, name=username)
+        session.add(user_data)
         session.commit()
         return f"Hi, @{username}. You are registered successfully."
     else:
         return f"User already exists: ID = {user_id}, Username = {username}"
 
+
 def transaction_process(message):
     trans = message.text.split()
-    sender = trans[1].lstrip('@')
-    receiver = trans[2].lstrip('@')
+    sender = trans[1].lstrip("@")
+    receiver = trans[2].lstrip("@")
     amount = float(trans[3])
 
     if len(trans) > 4:
         memo = trans[4]
-    else: 
+    else:
         memo = ""
     if amount > 0:
-        if session.query(User).filter_by(name = sender).first() is not None:
-            if session.query(User).filter_by(name = receiver).first() is not None:
-                senderID = session.query(User).filter_by(name = sender).first().id
-                reveiverID = session.query(User).filter_by(name = receiver).first().id
-                transaction = Transaction(chat_id = message.chat.id, date = message.date, sender_id = senderID, receiver_id = reveiverID, amount = amount, memo = memo)
-                session.add(transaction) 
+        if session.query(User).filter_by(name=sender).first() is not None:
+            if session.query(User).filter_by(name=receiver).first() is not None:
+                senderID = session.query(User).filter_by(name=sender).first().id
+                reveiverID = session.query(User).filter_by(name=receiver).first().id
+                transaction = Transaction(
+                    chat_id=message.chat.id,
+                    date=message.date,
+                    sender_id=senderID,
+                    receiver_id=reveiverID,
+                    amount=amount,
+                    memo=memo,
+                )
+                session.add(transaction)
                 session.commit()
                 return "Transaction added successfully!"
             else:
@@ -41,35 +50,46 @@ def transaction_process(message):
     else:
         return "Amount should greater than zero. Please try again."
 
+
 def show_bal(message):
     users = message.text.split()
-    name1 = users[1].lstrip('@')
-    name2 = users[2].lstrip('@')
-    
-    user1 = session.query(User).filter_by(name = name1).first()
-    user2 = session.query(User).filter_by(name = name2).first()
+    name1 = users[1].lstrip("@")
+    name2 = users[2].lstrip("@")
+
+    user1 = session.query(User).filter_by(name=name1).first()
+    user2 = session.query(User).filter_by(name=name2).first()
 
     if not user1 or not user2:
         return "Invalid user name. Please try again."
-    else: 
-        sent_total = session.query(
-            func.sum(Transaction.amount)).filter(
+    else:
+        sent_total = (
+            session.query(func.sum(Transaction.amount))
+            .filter(
                 and_(
-                    Transaction.sender_id == user1.id, 
-                    Transaction.receiver_id == user2.id, 
-                    Transaction.chat_id == message.chat.id, 
-                    Transaction.status.is_(None)
-                )).scalar() or 0.0
-                
-        received_total = session.query(
-            func.sum(Transaction.amount)).filter(
+                    Transaction.sender_id == user1.id,
+                    Transaction.receiver_id == user2.id,
+                    Transaction.chat_id == message.chat.id,
+                    Transaction.status.is_(None),
+                )
+            )
+            .scalar()
+            or 0.0
+        )
+
+        received_total = (
+            session.query(func.sum(Transaction.amount))
+            .filter(
                 and_(
-                    Transaction.sender_id == user2.id, 
-                    Transaction.receiver_id == user1.id, 
-                    Transaction.chat_id == message.chat.id, 
-                    Transaction.status.is_(None)
-                )).scalar() or 0.0
-        
+                    Transaction.sender_id == user2.id,
+                    Transaction.receiver_id == user1.id,
+                    Transaction.chat_id == message.chat.id,
+                    Transaction.status.is_(None),
+                )
+            )
+            .scalar()
+            or 0.0
+        )
+
         balance = sent_total - received_total
 
         if balance > 0:
@@ -79,71 +99,79 @@ def show_bal(message):
         else:
             return "Balance is even"
 
+
 def transaction_record(message):
     users = message.text.split()
-    name1 = users[1].lstrip('@')
-    name2 = users[2].lstrip('@')
+    name1 = users[1].lstrip("@")
+    name2 = users[2].lstrip("@")
     n = int(users[3])
-    user1 = session.query(User).filter_by(name = name1).first()
-    user2 = session.query(User).filter_by(name = name2).first()
+    user1 = session.query(User).filter_by(name=name1).first()
+    user2 = session.query(User).filter_by(name=name2).first()
 
     if not user1 or not user2:
         return "Invalid user name. Please try again."
     else:
-        n_days_ago = datetime.now() - timedelta(days = n)
+        n_days_ago = datetime.now() - timedelta(days=n)
         n_days_ago_timestamp = int(n_days_ago.timestamp())
 
-        transactions = session.query(Transaction).filter(
-            and_(
-                Transaction.date >= n_days_ago_timestamp,
-                or_(
-                    and_(Transaction.sender_id == user1.id, Transaction.receiver_id == user2.id),
-                    and_(Transaction.sender_id == user2.id, Transaction.receiver_id == user1.id)
-                ), 
-                Transaction.chat_id == message.chat.id, 
-                Transaction.status.is_(None)
+        transactions = (
+            session.query(Transaction)
+            .filter(
+                and_(
+                    Transaction.date >= n_days_ago_timestamp,
+                    or_(
+                        and_(
+                            Transaction.sender_id == user1.id,
+                            Transaction.receiver_id == user2.id,
+                        ),
+                        and_(
+                            Transaction.sender_id == user2.id,
+                            Transaction.receiver_id == user1.id,
+                        ),
+                    ),
+                    Transaction.chat_id == message.chat.id,
+                    Transaction.status.is_(None),
+                )
             )
-        ).all()
+            .all()
+        )
 
         if not transactions:
             return f"No transactions found between {name1} and {name2} in the past {n} days."
-        else: 
+        else:
             transaction_list = []
             for transaction in transactions:
-                transaction_date = datetime.fromtimestamp(transaction.date).strftime('%Y-%m-%d')
+                transaction_date = datetime.fromtimestamp(transaction.date).strftime(
+                    "%Y-%m-%d"
+                )
                 transaction_list.append(
                     f"{transaction_date} {name1 if transaction.sender_id == user1.id else name2} -> "
                     f"{name2 if transaction.receiver_id == user2.id else name1} {transaction.amount} {transaction.memo}"
                 )
             return "\n".join(transaction_list)
 
+
 def mark_as_done(message):
     users = message.text.split()
-    name1 = users[1].lstrip('@')
-    name2 = users[2].lstrip('@')
-    user1 = session.query(User).filter_by(name = name1).first()
-    user2 = session.query(User).filter_by(name = name2).first()
+    name1 = users[1].lstrip("@")
+    name2 = users[2].lstrip("@")
+    user1 = session.query(User).filter_by(name=name1).first()
+    user2 = session.query(User).filter_by(name=name2).first()
 
     if not user1 or not user2:
         return "Invalid user name. Please try again."
     else:
         session.execute(
-            update(Transaction).
-            where(
-                (Transaction.sender_id == user1.id) & (Transaction.receiver_id == user2.id) & (Transaction.chat_id == message.chat.id)|
-                (Transaction.sender_id == user2.id) & (Transaction.receiver_id == user1.id) & (Transaction.chat_id == message.chat.id)
-            ).
-            values(status = 'done')
+            update(Transaction)
+            .where(
+                (Transaction.sender_id == user1.id)
+                & (Transaction.receiver_id == user2.id)
+                & (Transaction.chat_id == message.chat.id)
+                | (Transaction.sender_id == user2.id)
+                & (Transaction.receiver_id == user1.id)
+                & (Transaction.chat_id == message.chat.id)
+            )
+            .values(status="done")
         )
         session.commit()
         return "Delete completed!"
-
-
-
-
-
-
-
-
-    
-
