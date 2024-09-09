@@ -19,14 +19,17 @@ def register_user(message):
 
 def transaction_process(message):
     trans = message.text.split()
-    sender = trans[1].lstrip("@")
-    receiver = trans[2].lstrip("@")
-    amount = float(trans[3])
-
+    if len(trans) < 4:
+        return "Invalid input. Please try again."
+    else:
+        sender = trans[1].lstrip("@")
+        receiver = trans[2].lstrip("@")
+        amount = float(trans[3])
     if len(trans) > 4:
         memo = trans[4]
     else:
         memo = ""
+        
     if amount > 0:
         if session.query(User).filter_by(name=sender).first() is not None:
             if session.query(User).filter_by(name=receiver).first() is not None:
@@ -53,8 +56,11 @@ def transaction_process(message):
 
 def show_bal(message):
     users = message.text.split()
-    name1 = users[1].lstrip("@")
-    name2 = users[2].lstrip("@")
+    if len(users) != 3:
+        return "Invalid input. Please try again."
+    else:
+        name1 = users[1].lstrip("@")
+        name2 = users[2].lstrip("@")
 
     user1 = session.query(User).filter_by(name=name1).first()
     user2 = session.query(User).filter_by(name=name2).first()
@@ -102,9 +108,13 @@ def show_bal(message):
 
 def transaction_record(message):
     users = message.text.split()
-    name1 = users[1].lstrip("@")
-    name2 = users[2].lstrip("@")
-    n = int(users[3])
+    if len(users) != 4:
+        return "Invalid input. Please try again."
+    else:
+        name1 = users[1].lstrip("@")
+        name2 = users[2].lstrip("@")
+        n = int(users[3])
+
     user1 = session.query(User).filter_by(name=name1).first()
     user2 = session.query(User).filter_by(name=name2).first()
 
@@ -153,8 +163,12 @@ def transaction_record(message):
 
 def mark_as_done(message):
     users = message.text.split()
-    name1 = users[1].lstrip("@")
-    name2 = users[2].lstrip("@")
+    if len(users) != 3:
+        return "Invalid input. Please try again."
+    else:
+        name1 = users[1].lstrip("@")
+        name2 = users[2].lstrip("@")
+        
     user1 = session.query(User).filter_by(name=name1).first()
     user2 = session.query(User).filter_by(name=name2).first()
 

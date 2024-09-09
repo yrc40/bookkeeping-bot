@@ -6,7 +6,6 @@ from utils import (
     register_user,
     mark_as_done,
 )
-import pandas as pd
 
 bot = telebot.TeleBot("7204964331:AAGcJe-_-EMhYEtEIQYxkwIfkI509vC5s68")
 
@@ -65,6 +64,5 @@ def trans_record(message):
 @bot.message_handler(commands=["delete"])
 def delete_rec(message):
     bot.reply_to(message, mark_as_done(message))
-
 
 bot.infinity_polling()
