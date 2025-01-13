@@ -1,2 +1,4 @@
 bookkeeping.db
 __pycache_
+venv/
+.env

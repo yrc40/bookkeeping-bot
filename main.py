@@ -1,4 +1,5 @@
 import telebot
+import os
 from utils import (
     transaction_process,
     show_bal,
@@ -6,8 +7,8 @@ from utils import (
     register_user,
     mark_as_done,
 )
-
-bot = telebot.TeleBot("7204964331:AAGcJe-_-EMhYEtEIQYxkwIfkI509vC5s68")
+key = os.getenv("BOOKKEEPING_KEY")
+bot = telebot.TeleBot(key)
 
 
 @bot.message_handler(commands=["start"])

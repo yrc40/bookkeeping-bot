@@ -1,0 +1,12 @@
+version: '3.8'
+
+services:
+  bot:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: bookkeeping-bot
+    volumes:
+      - ./bookkeeping.db:/app/bookkeeping.db
+    env_file:
+      - .env
